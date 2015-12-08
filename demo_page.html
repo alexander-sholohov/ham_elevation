@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script type="text/javascript" src="demo_data.js"></script>
+    <script type="text/javascript" src="HamElevation.js"></script>
+
+
+       <script>
+
+var gCanvasChartData = geoData.results;
+
+function drawElevationChartView()
+{
+      var hA = $("#hA").val();
+      var hB = $("#hB").val();
+      var useEarthArc = $("#useEarthArc").is(':checked');
+      var useFullElevation = $("#useFullElevation").is(':checked');
+
+      var p1 = {};
+      var p2 = {};
+      var gd = gCanvasChartData;
+      if(gd && gd.length >= 2)
+      {
+          var elm1 = gd[0];
+          p1.lat = elm1.location.lat; 
+          p1.lng = elm1.location.lng;
+          p1.elevation = elm1.elevation;
+          p1.antennaElevation = parseInt(hA);
+
+          var elm2 = gd[gd.length -1 ];
+          p2.lat = elm2.location.lat;
+          p2.lng = elm2.location.lng;
+          p2.elevation = elm2.elevation;
+          p2.antennaElevation = parseInt(hB);
+      }
+
+
+      var canvas = document.getElementById('elevation_canvas');
+      if(!canvas.getContext)
+      {
+        return;
+      }
+      var context = canvas.getContext('2d');
+
+      drawChart(context, p1, p2, gd, useEarthArc, useFullElevation);
+
+}
+
+$(document).ready( function(){
+ //console.log("in document ready ");
+
+
+    $( "#btnCalc" ).click(function() {  
+      drawElevationChartView();
+    });
+    $( "#useEarthArc" ).click(function() {  
+      drawElevationChartView();
+    });
+    $( "#useFullElevation" ).click(function() {  
+      drawElevationChartView();
+    });
+
+    drawElevationChartView();
+
+    //console.log("bla bla");
+} );
+
+    </script>
+
+ 
+
+  </head>
+  <body>
+    <div>
+      Elevation antenna A:<input id="hA" type="text" size="6" value="40"/>
+      Elevation antenna B:<input id="hB" type="text" size="6" value="50"/>
+      <button id="btnCalc">Update</button>
+      Show full earth elevation <input id="useFullElevation" type="checkbox"/>
+      Show earth arc <input id="useEarthArc" type="checkbox" checked/>
+
+    </div>
+
+    <div />
+    <canvas id="elevation_canvas" width="900" height="300">
+      Canvas is not supported
+    </canvas>
+  </body>
+
+
+
+</html>      
+
+
