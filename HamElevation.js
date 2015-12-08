@@ -2,8 +2,8 @@
 // This libray can show elevation chart on canvas element
 //
 // Developed by Alexander Sholohov <ra9yer@yahoo.com>
-// repository: https://github.com/alexander-sholohov/ham_elevation
-//
+// github repository: https://github.com/alexander-sholohov/ham_elevation
+// MIT license: http://choosealicense.com/licenses/mit/
 
 //----------------------------------------------------------------
 function angleBetweenPoints(p1, p2)

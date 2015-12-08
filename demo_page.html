@@ -30,14 +30,14 @@ function drawElevationChartView()
       if(gd && gd.length >= 2)
       {
           var elm1 = gd[0];
-          p1.lat = elm1.location.lat; 
-          p1.lng = elm1.location.lng;
+          p1.lat = elm1.location.lat;   // FIXME: replace to func lat() / lng() for google elevation service
+          p1.lng = elm1.location.lng;   // FIXME: replace to func lat() / lng() for google elevation service
           p1.elevation = elm1.elevation;
           p1.antennaElevation = parseInt(hA);
 
           var elm2 = gd[gd.length -1 ];
-          p2.lat = elm2.location.lat;
-          p2.lng = elm2.location.lng;
+          p2.lat = elm2.location.lat;  // FIXME: replace to func lat() / lng() for google elevation service
+          p2.lng = elm2.location.lng;  // FIXME: replace to func lat() / lng() for google elevation service
           p2.elevation = elm2.elevation;
           p2.antennaElevation = parseInt(hB);
       }
@@ -55,7 +55,6 @@ function drawElevationChartView()
 }
 
 $(document).ready( function(){
- //console.log("in document ready ");
 
 
     $( "#btnCalc" ).click(function() {  
@@ -70,7 +69,6 @@ $(document).ready( function(){
 
     drawElevationChartView();
 
-    //console.log("bla bla");
 } );
 
     </script>
