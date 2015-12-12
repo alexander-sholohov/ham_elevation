@@ -264,33 +264,22 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
 
 
     // draw filled area
+    ctx.beginPath();
     ctx.fillStyle = "rgba(20,20,0, 0.2)";
+    ctx.moveTo(centerX - halfway, centerY);
+
     for(var i=0; i<numPoints; i++)
     {
         var p = getPointByIndex(i);
         var x = p.x;
         var y = p.y;
 
-        if( i== 0 )
-        {
-            prevX = x;
-            prevY = y;
-        }
-        else
-        {
-            ctx.beginPath();
-            ctx.moveTo(prevX, prevY);
-            ctx.lineTo(x, y);
-            ctx.lineTo(x, centerY);
-            ctx.lineTo(prevX, centerY);
-            ctx.closePath();
-            ctx.fill();
+        ctx.lineTo(x, y);
 
-            prevX = x;
-            prevY = y;
-
-        }
     }
+    ctx.lineTo(centerX + halfway, centerY);
+    ctx.closePath();
+    ctx.fill();
 
 
     // draw elevation chart
