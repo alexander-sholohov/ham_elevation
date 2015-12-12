@@ -16,6 +16,7 @@
        <script>
 
 var gCanvasChartData = geoData.results;
+var gChart;
 
 function drawElevationChartView()
 {
@@ -48,10 +49,8 @@ function drawElevationChartView()
       {
         return;
       }
-      var context = canvas.getContext('2d');
 
-      drawChart(context, p1, p2, gd, useEarthArc, useFullElevation);
-
+      gChart.drawChart(p1, p2, gd, useEarthArc, useFullElevation);
 }
 
 $(document).ready( function(){
@@ -66,6 +65,30 @@ $(document).ready( function(){
     $( "#useFullElevation" ).click(function() {  
       drawElevationChartView();
     });
+
+    var canvas = document.getElementById('elevation_canvas');
+    gChart = new HamElevationChart(canvas);
+
+      canvas.addEventListener('mousemove', function(evt) {
+            res = gChart.hitProbe(evt.clientX, evt.clientY);
+            if ( res )
+            {
+              gChart.drawMarker(res.idx);
+              //console.log("Hit", res);
+            }
+
+            }, false);
+
+
+      canvas.addEventListener('click', function(evt) {
+            res = gChart.hitProbe(evt.clientX, evt.clientY);
+            if ( res )
+            {
+              gChart.showMarkerByIndex(res.idx);
+            }
+
+            }, false);
+
 
     drawElevationChartView();
 
