@@ -191,7 +191,6 @@ function drawEarthArc(ctx, centerX, centerY, halfway, height)
 //----------------------------------------------------------------
 function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, halfway, ang, earthRadius, downShift, useEarthArc, drawEarhArc)
 {
-
     var angDiv2 = ang / 2.0;
     var earthArcShift = earthRadius * Math.cos(angDiv2);
 
@@ -202,9 +201,40 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
     var naklonX1 = p1.elevation * 1 * scaleH;
     var naklonX2 = p2.elevation * 1 * scaleH;
 
+    var prevX = 0;
+    var prevY = 0;
+
+    function getPointByIndex(idx)
+    {
+        var a1 = (i - numPoints/2 ) * stepAngl;
+        var deltaH = 0;
+        if( useEarthArc )
+        {
+            var earthArc1 = earthRadius * Math.cos(a1);
+            deltaH = (earthArc1 - earthArcShift) ;
+        }
+
+        var correctionX = 0;
+        if( i < numPoints / 2)
+        {
+            correctionX = naklonX1 * Math.sin(a1);
+        }
+        else
+        {
+            correctionX = naklonX2 * Math.sin(a1);
+        }
+
+        var elevation1 = chartData[i].elevation - downShift;
+        var elevation2 = (elevation1 + deltaH ) * scaleH;
+
+        var x = (centerX - halfway) + stepX * i + correctionX;
+        var y = centerY - elevation2;
+
+        return {x:Math.floor(x), y:Math.floor(y)};
+    }
+
 
     ctx.save();
-
 
     // draw earth surface (not used)
     if( drawEarhArc )
@@ -233,35 +263,45 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
     }
 
 
+    // draw filled area
+    ctx.fillStyle = "rgba(20,20,0, 0.2)";
+    for(var i=0; i<numPoints; i++)
+    {
+        var p = getPointByIndex(i);
+        var x = p.x;
+        var y = p.y;
+
+        if( i== 0 )
+        {
+            prevX = x;
+            prevY = y;
+        }
+        else
+        {
+            ctx.beginPath();
+            ctx.moveTo(prevX, prevY);
+            ctx.lineTo(x, y);
+            ctx.lineTo(x, centerY);
+            ctx.lineTo(prevX, centerY);
+            ctx.closePath();
+            ctx.fill();
+
+            prevX = x;
+            prevY = y;
+
+        }
+    }
+
+
     // draw elevation chart
     ctx.beginPath();
     var prevX = 0;
     var prevY = 0;
     for(var i=0; i<numPoints; i++)
     {
-        var a1 = (i - numPoints/2 ) * stepAngl;
-        var deltaH = 0;
-        if( useEarthArc )
-        {
-            var earthArc1 = earthRadius * Math.cos(a1);
-            deltaH = (earthArc1 - earthArcShift) ;
-        }
-
-        var correctionX = 0;
-        if( i < numPoints / 2)
-        {
-            correctionX = naklonX1 * Math.sin(a1);
-        }
-        else
-        {
-            correctionX = naklonX2 * Math.sin(a1);
-        }
-
-        var elevation1 = chartData[i].elevation - downShift;
-        var elevation2 = (elevation1 + deltaH ) * scaleH;
-
-        var x = (centerX - halfway) + stepX * i + correctionX;
-        var y = centerY - elevation2;
+        var p = getPointByIndex(i);
+        var x = p.x;
+        var y = p.y;
         if( i== 0 )
         {
             ctx.moveTo(x, y);
@@ -271,23 +311,18 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
         else
         {
             ctx.lineTo(x, y);
-
-            var miny = Math.max(prevY, y);
-
-            ctx.fillStyle = "rgba(20,20,0, 0.2)"
-            ctx.fillRect(x, miny, prevX - x, centerY - miny );
             prevX = x;
             prevY = y;
-
         }
     }
+    
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#330000';
     ctx.stroke();    
 
 
-    ctx.restore();
 
+    ctx.restore();
 
 }
 
