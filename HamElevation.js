@@ -13,6 +13,7 @@ function HamElevationChart(canvas) {
 var _canvas = canvas;
 var _hitRegions = [];
 var _chartElevations = [];
+var _clickedMarkerIndex = null;
 
 //---
 var _angDiv2;
@@ -478,6 +479,28 @@ function drawMesh(ctx, ipX, ipY, iW, iH, distance, cntrW, antennaPosFromCenter)
 }
 
 //----------------------------------------------------------------
+function drawClickedMarkerIfNeed(ctx)
+{
+    var index = _clickedMarkerIndex;
+    if( index==null || index < 0 || index > _numPoints)
+        return;
+
+    var p1 = getPointByIndex(index);
+
+    ctx.save();
+    ctx.translate(p1.x, p1.y);
+    ctx.fillStyle = "rgba(0,0,240, 0.8)";
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(-10, -15);
+    ctx.lineTo(10, -15);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+}
+
+//----------------------------------------------------------------
 this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
 {
     _hitRegions = []; // initialize hit region array
@@ -597,6 +620,12 @@ function invalidateAndRedraw(context)
     context.fillStyle = '#ffffff';
     context.fill();
 
+    if( _chartElevations.length == 0 )
+    {
+        ctx.restore();
+        return;
+    }
+
 
     // draw mesh
     drawMesh(context, _ipX, _ipY, _iW, _iH, _distance, cntrW, antennaPosFromCenter);
@@ -619,6 +648,8 @@ function invalidateAndRedraw(context)
     }
 
     drawElevationShape(context, _p1, _p2, cntrW, _ipY, antennaPosFromCenter, _ang, _earthRadius, _useEarthArc, false);
+
+    drawClickedMarkerIfNeed(context);
 
     context.restore();
     context.restore();
@@ -682,6 +713,12 @@ this.drawMarker = function(index)
     _prevMarker = true;
     ctx.restore();
 
+}
+
+//----------------------------------------------------------------
+this.showMarkerByIndex = function(index)
+{
+    _clickedMarkerIndex = index;
 }
 
 } // end of global class-function HavElevationChart
