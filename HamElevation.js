@@ -5,6 +5,13 @@
 // github repository: https://github.com/alexander-sholohov/ham_elevation
 // MIT license: http://choosealicense.com/licenses/mit/
 
+
+function HamElevationChart(canvas) {
+'use strict';
+
+var _canvas = canvas;
+var _hitRegions = [];
+
 //----------------------------------------------------------------
 function angleBetweenPoints(p1, p2)
 {
@@ -82,7 +89,7 @@ function calcElevationStatistic(chartData, ang, earthRadius)
 
     var avg = (chartData.length > 0)? summ / chartData.length : 0;
 
-    res = {}
+    var res = {};
     res.minSimple = minSimple;
     res.maxSimple = maxSimple;
     res.minEarth = minEarth;
@@ -215,7 +222,7 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
         }
 
         var correctionX = 0;
-        if( i < numPoints / 2)
+        if( i < numPoints / 2 )
         {
             correctionX = naklonX1 * Math.sin(a1);
         }
@@ -309,6 +316,15 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
     ctx.strokeStyle = '#330000';
     ctx.stroke();    
 
+    // add hitRegion
+    for(var i=0; i<numPoints; i++)
+    {
+        var p = getPointByIndex(i);
+        var item = {x1:p.x-1, y1:p.y-5, x2:p.x+1, y2:p.y+5, obj:{idx:i, elevation:chartData[i].elevation} };
+
+        _hitRegions.push(item);
+    }
+
 
 
     ctx.restore();
@@ -319,7 +335,7 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
 //----------------------------------------------------------------
 function findAppropriateChartMeshParam(screenSize, realSize, numLines)
 {
-    res = {};
+    var res = {};
 
     var scaleFactor = screenSize / realSize;
 
@@ -423,8 +439,11 @@ function drawMesh(ctx, ipX, ipY, iW, iH, scaleH, distance, cntrW, antennaPosFrom
 }
 
 //----------------------------------------------------------------
-function drawChart(context, p1, p2, chartData, useEarthArc, useFullElevation)
+this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
 {
+    _hitRegions = []; // initialize hit region array
+    var context = _canvas.getContext('2d');
+
     var clientW = context.canvas.clientWidth;
     var clientH = context.canvas.clientHeight;
 
@@ -434,7 +453,6 @@ function drawChart(context, p1, p2, chartData, useEarthArc, useFullElevation)
     var distance = ang * EARTH_RADIUS;
     var h = EARTH_RADIUS * (1 - Math.cos(ang/2.0) );
     var virtualAng = (ang < 0.05)? 0.0 : ang;  // ignore small angle
-
 
     // clear screen + draw border
     context.beginPath();
@@ -513,6 +531,27 @@ function drawChart(context, p1, p2, chartData, useEarthArc, useFullElevation)
     drawElevationShape(context, p1, p2, chartData, scaleH, cntrW, ipY, antennaPosFromCenter, ang, EARTH_RADIUS, downShift, useEarthArc, false);
 
     context.restore();
-
-
 }
+
+//----------------------------------------------------------------
+this.hitProbe = function(mouseX, mouseY)
+{
+    var rect = _canvas.getBoundingClientRect();
+    var x = mouseX - rect.left;
+    var y = mouseY - rect.top;
+
+    for( var i=0; i<_hitRegions.length; i++ )
+    {
+        var item = _hitRegions[i];
+        if( item.x1 <= x && x <= item.x2 && item.y1 <= y && y <= item.y2 )
+        {
+            return item.obj;
+        }
+    }
+
+    return null;
+}
+
+
+
+} // end of global class-function HavElevationChart
