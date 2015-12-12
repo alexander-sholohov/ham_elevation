@@ -9,8 +9,41 @@
 function HamElevationChart(canvas) {
 'use strict';
 
+//---
 var _canvas = canvas;
 var _hitRegions = [];
+var _chartElevations = [];
+
+//---
+var _angDiv2;
+var _earthArcShift;
+
+var _numPoints;
+var _stepX;
+var _stepAngl;
+
+var _naklonX1;
+var _naklonX2;
+
+var _useEarthArc;
+var _earthRadius;
+var _downShift;
+var _scaleH;
+var _centerX;
+var _centerY;
+var _halfway;
+var _distance;
+var _ang;
+
+var _ipX;
+var _ipY;
+var _iW;
+var _iH;
+var _anglDiv2;
+
+var _p1;
+var _p2;
+var _h;
 
 //----------------------------------------------------------------
 function angleBetweenPoints(p1, p2)
@@ -101,10 +134,10 @@ function calcElevationStatistic(chartData, ang, earthRadius)
 
 
 //----------------------------------------------------------------
-function drawEndpoint2(ctx, p1, scaleH, x, y, ang, downShift)
+function drawEndpoint2(ctx, p1, x, y, ang)
 {
-    var h1 = (p1.elevation - downShift) * scaleH;
-    var h2 = (p1.elevation + p1.antennaElevation - downShift) * scaleH;
+    var h1 = (p1.elevation - _downShift) * _scaleH;
+    var h2 = (p1.elevation + p1.antennaElevation - _downShift) * _scaleH;
 
 
     ctx.save();
@@ -136,10 +169,10 @@ function drawEndpoint2(ctx, p1, scaleH, x, y, ang, downShift)
 
 
 //----------------------------------------------------------------
-function drawLinkBetweenAntennas(ctx, p1, p2, scaleH, centerX, centerY, halfway, ang, downShift)
+function drawLinkBetweenAntennas(ctx, p1, p2, centerX, centerY, halfway, ang)
 {
-    var el1 = (p1.elevation + p1.antennaElevation - downShift) * scaleH;
-    var el2 = (p2.elevation + p2.antennaElevation - downShift) * scaleH;   
+    var el1 = (p1.elevation + p1.antennaElevation - _downShift) * _scaleH;
+    var el2 = (p2.elevation + p2.antennaElevation - _downShift) * _scaleH;   
 
     var x1 = centerX - halfway - el1 * Math.sin(ang);
     var y1 = centerY - el1 * Math.cos(ang);
@@ -196,49 +229,56 @@ function drawEarthArc(ctx, centerX, centerY, halfway, height)
 
 
 //----------------------------------------------------------------
-function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, halfway, ang, earthRadius, downShift, useEarthArc, drawEarhArc)
+function prepareCommonData(p1, p2, chartData, centerX, centerY, ang)
 {
-    var angDiv2 = ang / 2.0;
-    var earthArcShift = earthRadius * Math.cos(angDiv2);
+    _angDiv2 = ang / 2.0;
+    _earthArcShift = _earthRadius * Math.cos(_angDiv2);
 
-    var numPoints = chartData.length;
-    var stepX =  halfway * 2 / numPoints;
-    var stepAngl = ang / numPoints;
+    _numPoints = chartData.length;
+    _stepX =  _halfway * 2 / _numPoints;
+    _stepAngl = ang / _numPoints;
 
-    var naklonX1 = p1.elevation * 1 * scaleH;
-    var naklonX2 = p2.elevation * 1 * scaleH;
+    _naklonX1 = p1.elevation * 1 * _scaleH;
+    _naklonX2 = p2.elevation * 1 * _scaleH;
+}
+
+//----------------------------------------------------------------
+function getPointByIndex(idx)
+{
+    var a1 = (idx - _numPoints/2 ) * _stepAngl;
+    var deltaH = 0;
+    if( _useEarthArc )
+    {
+        var earthArc1 = _earthRadius * Math.cos(a1);
+        deltaH = (earthArc1 - _earthArcShift) ;
+    }
+
+    var correctionX = 0;
+    if( idx < _numPoints / 2 )
+    {
+        correctionX = _naklonX1 * Math.sin(a1);
+    }
+    else
+    {
+        correctionX = _naklonX2 * Math.sin(a1);
+    }
+
+    var elevation1 = _chartElevations[idx] - _downShift;
+    var elevation2 = (elevation1 + deltaH ) * _scaleH;
+
+    var x = (_centerX - _halfway) + _stepX * idx + correctionX;
+    var y = _centerY - elevation2;
+
+    return {x:Math.floor(x), y:Math.floor(y)};
+}
+
+
+//----------------------------------------------------------------
+function drawElevationShape(ctx, p1, p2, centerX, centerY, halfway, ang, earthRadius, useEarthArc, drawEarhArc)
+{
 
     var prevX = 0;
     var prevY = 0;
-
-    function getPointByIndex(idx)
-    {
-        var a1 = (i - numPoints/2 ) * stepAngl;
-        var deltaH = 0;
-        if( useEarthArc )
-        {
-            var earthArc1 = earthRadius * Math.cos(a1);
-            deltaH = (earthArc1 - earthArcShift) ;
-        }
-
-        var correctionX = 0;
-        if( i < numPoints / 2 )
-        {
-            correctionX = naklonX1 * Math.sin(a1);
-        }
-        else
-        {
-            correctionX = naklonX2 * Math.sin(a1);
-        }
-
-        var elevation1 = chartData[i].elevation - downShift;
-        var elevation2 = (elevation1 + deltaH ) * scaleH;
-
-        var x = (centerX - halfway) + stepX * i + correctionX;
-        var y = centerY - elevation2;
-
-        return {x:Math.floor(x), y:Math.floor(y)};
-    }
 
 
     ctx.save();
@@ -253,7 +293,7 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
         {
             var a1 = (i - numPoints/2 ) * stepAngl;
             var earthArc1 = earthRadius * Math.cos(a1);
-            var earthArc2 = (earthArc1 - earthArcShift) * scaleH;
+            var earthArc2 = (earthArc1 - earthArcShift) * _scaleH;
 
             var x = (centerX - halfway) + stepX * i;
             var y = centerY - earthArc2;
@@ -275,7 +315,7 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
     ctx.fillStyle = "rgba(20,20,0, 0.2)";
     ctx.moveTo(centerX - halfway, centerY);
 
-    for(var i=0; i<numPoints; i++)
+    for(var i=0; i<_numPoints; i++)
     {
         var p = getPointByIndex(i);
         var x = p.x;
@@ -293,7 +333,7 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
     ctx.beginPath();
     var prevX = 0;
     var prevY = 0;
-    for(var i=0; i<numPoints; i++)
+    for(var i=0; i<_numPoints; i++)
     {
         var p = getPointByIndex(i);
         var x = p.x;
@@ -317,14 +357,13 @@ function drawElevationShape(ctx, p1, p2, chartData, scaleH, centerX, centerY, ha
     ctx.stroke();    
 
     // add hitRegion
-    for(var i=0; i<numPoints; i++)
+    for(var i=0; i<_numPoints; i++)
     {
         var p = getPointByIndex(i);
-        var item = {x1:p.x-1, y1:p.y-5, x2:p.x+1, y2:p.y+5, obj:{idx:i, elevation:chartData[i].elevation} };
+        var item = {x1:p.x-1, y1:p.y-50, x2:p.x+1, y2:p.y+50, obj:{idx:i, elevation:_chartElevations[i]} };
 
         _hitRegions.push(item);
     }
-
 
 
     ctx.restore();
@@ -377,9 +416,9 @@ function findAppropriateChartMeshParam(screenSize, realSize, numLines)
 }
 
 //----------------------------------------------------------------
-function drawMesh(ctx, ipX, ipY, iW, iH, scaleH, distance, cntrW, antennaPosFromCenter, downShift)
+function drawMesh(ctx, ipX, ipY, iW, iH, distance, cntrW, antennaPosFromCenter)
 {
-    var resH = findAppropriateChartMeshParam(iH, iH / scaleH, 10);
+    var resH = findAppropriateChartMeshParam(iH, iH / _scaleH, 10);
     var screenStepH = resH.screenStepSize;
     var realStepH = resH.realStepSize;
     var numLinesH2 = resH.numLines;
@@ -400,7 +439,7 @@ function drawMesh(ctx, ipX, ipY, iW, iH, scaleH, distance, cntrW, antennaPosFrom
         ctx.lineTo(ipX+iW, y);
         if(true)
         {
-            var v = i * realStepH + downShift;
+            var v = i * realStepH + _downShift;
             ctx.fillText(v.toFixed(resH.digitsAfterPoint), ipX-3, y + 5);
         }
 
@@ -454,14 +493,6 @@ this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
     var h = EARTH_RADIUS * (1 - Math.cos(ang/2.0) );
     var virtualAng = (ang < 0.05)? 0.0 : ang;  // ignore small angle
 
-    // clear screen + draw border
-    context.beginPath();
-    context.rect(0, 0, clientW, clientH);
-    context.fillStyle = '#f0f0f0';
-    context.fill();
-    context.lineWidth = 1;
-    context.strokeStyle = 'black';
-    context.stroke();    
 
     var marginLeft = 60;
     var marginTop = 15;
@@ -473,15 +504,17 @@ this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
     var iW = clientW - marginLeft - marginRight;
     var iH = clientH - marginBottom - marginTop;
 
-    // draw white field
-    context.beginPath();
-    context.rect(ipX, ipY, iW, -iH);
-    context.fillStyle = '#ffffff';
-    context.fill();
 
+    _chartElevations = [];
     if( !(chartData && chartData.length>1) )
     {
         return;
+    }
+
+    // copy elevations
+    for( var i=0; i<chartData.length; i++ )
+    {
+        _chartElevations.push( chartData[i].elevation );
     }
 
 
@@ -502,36 +535,96 @@ this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
     var fitPercent = (useFullElevation)? 0.8 : 0.95;
     var scaleH =  fitPercent * iH / ( posMax - downShift )  ;
 
-
     var antennaPadding = 20;
     var antennaPosFromCenter = iW / 2 - (antennaPadding + antennaShift*scaleH);
     var cntrW = ipX + iW / 2 ;
 
+    // common params. copy to class member 
+    _useEarthArc = useEarthArc;
+    _earthRadius = EARTH_RADIUS;
+    _downShift = downShift;
+    _centerX = cntrW;
+    _centerY = ipY;
+    _scaleH = scaleH;
+    _halfway = antennaPosFromCenter;
+    _distance = distance;
+    _ang = ang;
+    _p1 = p1;
+    _p2 = p2;
+    _ipX = ipX;
+    _ipY = ipY;
+    _iW = iW;
+    _iH = iH;
+    _anglDiv2 = anglDiv2;
+    _h = h;
+
+
+    // calc commin internal args
+    prepareCommonData(p1, p2, chartData, cntrW, ipY, ang);
+
+
+    invalidateAndRedraw(context);
+    _prevMarker = false;
+}
+
+
+//----------------------------------------------------------------
+function invalidateAndRedraw(context)
+{
+    var clientW = context.canvas.clientWidth;
+    var clientH = context.canvas.clientHeight;
+    //
+    var cntrW = _centerX;
+    var antennaPosFromCenter = _halfway;
+
+
+    //------------
+    context.save();
+
+
+    // clear screen + draw border
+    context.beginPath();
+    context.rect(0, 0, clientW, clientH);
+    context.fillStyle = '#f0f0f0';
+    context.fill();
+    context.lineWidth = 1;
+    context.strokeStyle = 'black';
+    context.stroke();    
+
+    // draw white field
+    context.beginPath();
+    context.rect(_ipX, _ipY, _iW, -_iH);
+    context.fillStyle = '#ffffff';
+    context.fill();
+
 
     // draw mesh
-    drawMesh(context, ipX, ipY, iW, iH, scaleH, distance, cntrW, antennaPosFromCenter, downShift);
+    drawMesh(context, _ipX, _ipY, _iW, _iH, _distance, cntrW, antennaPosFromCenter);
 
 
     context.save();
     context.beginPath();
-    context.rect(ipX, ipY, iW, -iH); // define clip region
+    context.rect(_ipX, _ipY, _iW, -_iH); // define clip region
     context.clip();
 
 
-    drawEndpoint2(context, p1, scaleH, cntrW - antennaPosFromCenter, ipY, -1 * anglDiv2, downShift);
-    drawEndpoint2(context, p2, scaleH, cntrW + antennaPosFromCenter, ipY, 1 * anglDiv2, downShift);
+    drawEndpoint2(context, _p1, cntrW - antennaPosFromCenter, _ipY, -1 * _anglDiv2);
+    drawEndpoint2(context, _p2, cntrW + antennaPosFromCenter, _ipY, 1 * _anglDiv2);
 
-    drawLinkBetweenAntennas(context, p1, p2, scaleH, cntrW, ipY, antennaPosFromCenter, anglDiv2, downShift);
+    drawLinkBetweenAntennas(context, _p1, _p2, cntrW, _ipY, antennaPosFromCenter, _anglDiv2);
     
-    if( useEarthArc )
+    if( _useEarthArc )
     {
-        drawEarthArc(context, cntrW, ipY, antennaPosFromCenter, h * scaleH);
+        drawEarthArc(context, cntrW, _ipY, antennaPosFromCenter, _h * _scaleH);
     }
 
-    drawElevationShape(context, p1, p2, chartData, scaleH, cntrW, ipY, antennaPosFromCenter, ang, EARTH_RADIUS, downShift, useEarthArc, false);
+    drawElevationShape(context, _p1, _p2, cntrW, _ipY, antennaPosFromCenter, _ang, _earthRadius, _useEarthArc, false);
 
     context.restore();
+    context.restore();
+
 }
+
 
 //----------------------------------------------------------------
 this.hitProbe = function(mouseX, mouseY)
@@ -552,6 +645,43 @@ this.hitProbe = function(mouseX, mouseY)
     return null;
 }
 
+var _prevMarker = null;
 
+//----------------------------------------------------------------
+this.drawMarker = function(index)
+{
+    if( index > _numPoints )
+        return;
+
+    var ctx = _canvas.getContext('2d');
+    ctx.save();
+
+    function intDrawMarker()
+    {
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(-7, -15);
+        ctx.lineTo(7, -15);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+
+    if( _prevMarker )
+    {
+        invalidateAndRedraw(ctx);
+    }
+
+    var p1 = getPointByIndex(index);
+    ctx.translate(p1.x, p1.y);
+    ctx.fillStyle = "rgba(0,0,200, 0.5)";
+    intDrawMarker();
+    ctx.scale(1, -1);
+    intDrawMarker();
+
+    _prevMarker = true;
+    ctx.restore();
+
+}
 
 } // end of global class-function HavElevationChart
