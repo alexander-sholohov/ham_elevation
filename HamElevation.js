@@ -453,7 +453,7 @@ function drawChart(context, p1, p2, chartData, useEarthArc, useFullElevation)
     var elevationStat = calcElevationStatistic(chartData, ang, EARTH_RADIUS);
     var avgElevation = elevationStat.avg;
 
-    var posMin = Math.min(p1.elevation, p2.elevation, elevationStat.minEarth);
+    var posMin = Math.min(p1.elevation, p2.elevation, elevationStat.minSimple);
     var posMax = Math.max(p1.elevation + p1.antennaElevation, p2.elevation + p2.antennaElevation, elevationStat.maxEarth);
 
     var downShift = (useFullElevation)? 0 : Math.floor(posMin / 100.0) * 100 ;
