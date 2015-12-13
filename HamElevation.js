@@ -1,9 +1,11 @@
 //
-// This libray can show elevation chart on canvas element
+// This libray can show elevation chart on canvas element.
 //
 // Developed by Alexander Sholohov <ra9yer@yahoo.com>
 // github repository: https://github.com/alexander-sholohov/ham_elevation
 // MIT license: http://choosealicense.com/licenses/mit/
+//
+//
 
 
 function HamElevationChart(canvas) {
@@ -13,7 +15,8 @@ function HamElevationChart(canvas) {
 var _canvas = canvas;
 var _hitRegions = [];
 var _chartElevations = [];
-var _clickedMarkerIndex = null;
+var _staticMarkerIndex = null;
+var _dynamicMarkerIndex = null;
 
 //---
 var _angDiv2;
@@ -479,9 +482,9 @@ function drawMesh(ctx, ipX, ipY, iW, iH, distance, cntrW, antennaPosFromCenter)
 }
 
 //----------------------------------------------------------------
-function drawClickedMarkerIfNeed(ctx)
+function drawStaticMarkerIfNeed(ctx)
 {
-    var index = _clickedMarkerIndex;
+    var index = _staticMarkerIndex;
     if( index==null || index < 0 || index > _numPoints)
         return;
 
@@ -497,13 +500,52 @@ function drawClickedMarkerIfNeed(ctx)
     ctx.closePath();
     ctx.fill();
     ctx.restore();
-
 }
+
+
+//----------------------------------------------------------------
+function drawDynamicMarkerIfNeed(ctx)
+{
+    var index = _dynamicMarkerIndex;
+    if( index==null || index < 0 || index > _numPoints)
+        return;
+
+    var p1 = getPointByIndex(index);
+
+
+    function intDrawMarker()
+    {
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(-7, -15);
+        ctx.lineTo(7, -15);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+
+    ctx.save();
+
+    ctx.translate(p1.x, p1.y);
+    ctx.fillStyle = "rgba(0,0,200, 0.5)";
+    intDrawMarker();
+    ctx.scale(1, -1);
+    intDrawMarker();
+
+    ctx.restore();
+}
+
 
 //----------------------------------------------------------------
 this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
 {
     _hitRegions = []; // initialize hit region array
+
+    if( !_canvas.getContext )
+    {
+        return;
+    }
+
     var context = _canvas.getContext('2d');
 
     var clientW = context.canvas.clientWidth;
@@ -528,17 +570,22 @@ this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
     var iH = clientH - marginBottom - marginTop;
 
 
+    // copy elevations
     _chartElevations = [];
-    if( !(chartData && chartData.length>1) )
+    if( chartData )
     {
+        for( var i=0; i<chartData.length; i++ )
+        {
+            _chartElevations.push( chartData[i].elevation );
+        }
+    }
+
+    if( _chartElevations.length < 2  )
+    {
+        invalidateAndRedraw(context);
         return;
     }
 
-    // copy elevations
-    for( var i=0; i<chartData.length; i++ )
-    {
-        _chartElevations.push( chartData[i].elevation );
-    }
 
 
     var el1 = p1.elevation + p1.antennaElevation;
@@ -581,19 +628,22 @@ this.drawChart = function(p1, p2, chartData, useEarthArc, useFullElevation)
     _anglDiv2 = anglDiv2;
     _h = h;
 
+    // clear markers
+    _staticMarkerIndex = null;
+    _dynamicMarkerIndex = null;
 
     // calc commin internal args
     prepareCommonData(p1, p2, chartData, cntrW, ipY, ang);
 
 
     invalidateAndRedraw(context);
-    _prevMarker = false;
 }
 
 
 //----------------------------------------------------------------
-function invalidateAndRedraw(context)
+function invalidateAndRedraw(paramContext)
 {
+    var context = (paramContext)? paramContext : _canvas.getContext('2d');
     var clientW = context.canvas.clientWidth;
     var clientH = context.canvas.clientHeight;
     //
@@ -622,7 +672,7 @@ function invalidateAndRedraw(context)
 
     if( _chartElevations.length == 0 )
     {
-        ctx.restore();
+        context.restore();
         return;
     }
 
@@ -649,9 +699,10 @@ function invalidateAndRedraw(context)
 
     drawElevationShape(context, _p1, _p2, cntrW, _ipY, antennaPosFromCenter, _ang, _earthRadius, _useEarthArc, false);
 
-    drawClickedMarkerIfNeed(context);
+    drawStaticMarkerIfNeed(context);
+    drawDynamicMarkerIfNeed(context);
 
-    context.restore();
+    context.restore(); // clip region
     context.restore();
 
 }
@@ -676,49 +727,29 @@ this.hitProbe = function(mouseX, mouseY)
     return null;
 }
 
-var _prevMarker = null;
 
 //----------------------------------------------------------------
-this.drawMarker = function(index)
+this.showStaticMarkerByIndex = function(index)
 {
-    if( index > _numPoints )
-        return;
-
-    var ctx = _canvas.getContext('2d');
-    ctx.save();
-
-    function intDrawMarker()
+    var prevIndex = _staticMarkerIndex;
+    _staticMarkerIndex = index;
+    if( prevIndex != index )
     {
-        ctx.beginPath();
-        ctx.moveTo(0,0);
-        ctx.lineTo(-7, -15);
-        ctx.lineTo(7, -15);
-        ctx.closePath();
-        ctx.fill();
+        invalidateAndRedraw();
     }
-
-
-    if( _prevMarker )
-    {
-        invalidateAndRedraw(ctx);
-    }
-
-    var p1 = getPointByIndex(index);
-    ctx.translate(p1.x, p1.y);
-    ctx.fillStyle = "rgba(0,0,200, 0.5)";
-    intDrawMarker();
-    ctx.scale(1, -1);
-    intDrawMarker();
-
-    _prevMarker = true;
-    ctx.restore();
-
 }
+
 
 //----------------------------------------------------------------
-this.showMarkerByIndex = function(index)
+this.showDynamicMarkerByIndex = function(index)
 {
-    _clickedMarkerIndex = index;
+    var prevIndex = _dynamicMarkerIndex;
+    _dynamicMarkerIndex = index;
+    if( prevIndex != index )
+    {
+        invalidateAndRedraw();
+    }
 }
+
 
 } // end of global class-function HavElevationChart

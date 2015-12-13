@@ -73,8 +73,11 @@ $(document).ready( function(){
             res = gChart.hitProbe(evt.clientX, evt.clientY);
             if ( res )
             {
-              gChart.drawMarker(res.idx);
-              //console.log("Hit", res);
+              gChart.showDynamicMarkerByIndex(res.idx);
+            }
+            else
+            {
+              gChart.showDynamicMarkerByIndex(-1);
             }
 
             }, false);
@@ -84,7 +87,11 @@ $(document).ready( function(){
             res = gChart.hitProbe(evt.clientX, evt.clientY);
             if ( res )
             {
-              gChart.showMarkerByIndex(res.idx);
+              gChart.showStaticMarkerByIndex(res.idx);
+            }
+            else
+            {
+              gChart.showStaticMarkerByIndex(-1); 
             }
 
             }, false);
