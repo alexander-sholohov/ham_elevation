@@ -472,7 +472,8 @@ function drawMesh(ctx, ipX, ipY, iW, iH, distance, cntrW, antennaPosFromCenter)
         ctx.moveTo(x, ipY + 2);
         ctx.lineTo(x, ipY - iH);
         var v = i * realStepV / 1000;
-        var t = v.toFixed( (distance < 12)? 1 : 0 ) + " km";
+        var precision = (distance < 3000)? 2 : (distance < 12000)? 1 : 0;
+        var t = v.toFixed( precision ) + " km";
         ctx.fillText(t, x, ipY + 15);
 
     }
