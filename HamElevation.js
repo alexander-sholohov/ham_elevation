@@ -383,39 +383,24 @@ function findAppropriateChartMeshParam(screenSize, realSize, numLines)
     var scaleFactor = screenSize / realSize;
 
     var x1 = realSize / numLines;
-    var x2 = x1;
     var d = 1;
     var cnt = 0;
+    var k = 2;
 
-    while( x2 > 10)
+    var x2 = x1 * k;
+
+    while( x2 / 10 >= 1 )
     {
         x2 = x2 / 10;
         d *= 10;
         cnt += 1;
     }
 
-    if( cnt > 0)
-    {
-        var x3 = Math.floor(x2);
-        res.realStepSize = x3 * d;
-        res.screenStepSize = res.realStepSize * scaleFactor;
-        res.numLines = Math.ceil(screenSize / res.screenStepSize);  //  ceil?
-        if( res.numLines > numLines * 1.5)
-        {
-            res.realStepSize *= 1.5;
-            res.screenStepSize = res.realStepSize * scaleFactor;
-            res.numLines = Math.ceil(screenSize / res.screenStepSize);
-        }
-        res.digitsAfterPoint = 0;
-    }
-    else
-    {
-        res.screenStepSize = screenSize / numLines;
-        res.realStepSize = realSize / numLines;
-        res.numLines = numLines;
-        res.digitsAfterPoint = 1;
-    }
-
+    var x3 = (cnt>0)? Math.floor(x2) : x2;
+    res.realStepSize = x3 * d / k;
+    res.screenStepSize = res.realStepSize * scaleFactor;
+    res.numLines = Math.ceil(screenSize / res.screenStepSize);  //  ceil?
+    res.digitsAfterPoint = (cnt>0)? 0 : -1 * Math.log10(x1);
     return res;
 }
 
@@ -427,7 +412,7 @@ function drawMesh(ctx, ipX, ipY, iW, iH, distance, cntrW, antennaPosFromCenter)
     var realStepH = resH.realStepSize;
     var numLinesH2 = resH.numLines;
 
-    // horisontal mesh
+    // horisontal mesh (elevation)
     ctx.beginPath();
     ctx.textAlign = "end";
     ctx.textBaseline = "bottom";    
@@ -450,7 +435,7 @@ function drawMesh(ctx, ipX, ipY, iW, iH, distance, cntrW, antennaPosFromCenter)
     }
     ctx.stroke();    
 
-    // vertical  mesh
+    // vertical  mesh (distance)
     var resV = findAppropriateChartMeshParam(antennaPosFromCenter*2, distance, 10);
     var screenStepV = resV.screenStepSize;
     var realStepV = resV.realStepSize;
@@ -473,7 +458,7 @@ function drawMesh(ctx, ipX, ipY, iW, iH, distance, cntrW, antennaPosFromCenter)
         ctx.lineTo(x, ipY - iH);
         var v = i * realStepV / 1000;
         var precision = (distance < 3000)? 2 : (distance < 12000)? 1 : 0;
-        var t = v.toFixed( precision ) + " km";
+        var t = (i>0)? v.toFixed( precision ) + " km" : "0";
         ctx.fillText(t, x, ipY + 15);
 
     }
